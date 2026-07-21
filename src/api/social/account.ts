@@ -78,19 +78,23 @@ export const deleteSocialAccountApi = (data: Array<number>) => {
   });
 };
 
-/** 查询账号实时登录状态 */
+/** 查询账号实时登录状态（容器需启动浏览器导航，耗时 4~60 秒，覆盖默认 10s 超时） */
 export const getSocialAccountLoginStatusApi = (id: string) => {
   return http.request<ResponseData<XhsLoginStatus>>(
     "get",
-    `/social/accounts/${id}/loginStatus`
+    `/social/accounts/${id}/loginStatus`,
+    {},
+    { timeout: 90000 }
   );
 };
 
-/** 获取扫码登录二维码 */
+/** 获取扫码登录二维码（同上，覆盖默认 10s 超时） */
 export const getSocialAccountQrcodeApi = (id: string) => {
   return http.request<ResponseData<XhsQrcode>>(
     "get",
-    `/social/accounts/${id}/qrcode`
+    `/social/accounts/${id}/qrcode`,
+    {},
+    { timeout: 90000 }
   );
 };
 

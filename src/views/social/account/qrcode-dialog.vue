@@ -72,7 +72,9 @@ function startPolling() {
   polling.value = true;
   let failCount = 0;
   const startedAt = Date.now();
-  timer = setInterval(async () => {
+  // 用递归 setTimeout：状态查询耗时 4 秒以上，避免 setInterval 请求叠加
+  const poll = async () => {
+    if (!polling.value) return;
     // 二维码有效期内轮询，超时自动停止
     if (Date.now() - startedAt > (qrTimeout.value + 30) * 1000) {
       stopPolling();
@@ -87,6 +89,7 @@ function startPolling() {
         message(`账号 ${props.accountName} 登录成功`, { type: "success" });
         emit("loggedIn");
         visible.value = false;
+        return;
       }
     } catch {
       // 扫码后 cookies 落盘需要时间；接口偶发失败可容忍，连续失败则提示
@@ -95,9 +98,14 @@ function startPolling() {
         stopPolling();
         message("登录状态查询持续失败，请检查节点后重试", { type: "error" });
         visible.value = false;
+        return;
       }
     }
-  }, 3000);
+    if (polling.value) {
+      timer = setTimeout(poll, 3000);
+    }
+  };
+  timer = setTimeout(poll, 1000);
 }
 
 onBeforeUnmount(stopPolling);
