@@ -47,6 +47,10 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
   const multipleSelection = ref([]);
   /** 账号ID -> 登录状态 */
   const loginStateMap = ref<Record<string, LoginState>>({});
+  /** 账号ID -> 已登录账号的昵称/小红书号 */
+  const loginProfileMap = ref<
+    Record<string, { nickname?: string; redId?: string }>
+  >({});
   const statusLoading = ref(false);
 
   const columns: TableColumnList = [
@@ -83,6 +87,27 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
       label: "所在节点",
       prop: "nodeName",
       minWidth: 110
+    },
+    {
+      label: "平台账号",
+      prop: "xhsUserId",
+      minWidth: 120,
+      cellRenderer: ({ row }) => {
+        const profile = loginProfileMap.value[row.id];
+        if (profile?.nickname) {
+          return (
+            <span>
+              {profile.nickname}
+              {profile.redId ? (
+                <span style="color: var(--el-text-color-secondary); font-size: 12px">
+                  ({profile.redId})
+                </span>
+              ) : null}
+            </span>
+          );
+        }
+        return row.xhsUserId ?? "-";
+      }
     },
     {
       label: "登录状态",
@@ -187,6 +212,12 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
       try {
         const { data } = await getSocialAccountLoginStatusApi(row.id);
         loginStateMap.value[row.id] = data.isLoggedIn;
+        if (data.isLoggedIn) {
+          loginProfileMap.value[row.id] = {
+            nickname: data.nickname,
+            redId: data.redId
+          };
+        }
       } catch {
         loginStateMap.value[row.id] = "error";
         failCount++;
@@ -305,6 +336,7 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
     defaultSort,
     multipleSelection,
     loginStateMap,
+    loginProfileMap,
     statusLoading,
     onSearch,
     resetForm,

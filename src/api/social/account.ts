@@ -33,6 +33,10 @@ export type SocialAccountRequest = {
 export type XhsLoginStatus = {
   isLoggedIn: boolean;
   username: string;
+  /** 真实账号昵称（登录时由后端补充） */
+  nickname?: string;
+  /** 小红书号（登录时由后端补充） */
+  redId?: string;
 };
 
 export type XhsQrcode = {
