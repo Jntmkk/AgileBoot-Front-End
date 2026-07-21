@@ -182,16 +182,24 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
   /** 逐个查询账号实时登录状态（容器调用较重，串行避免打爆节点） */
   async function refreshLoginStatus() {
     statusLoading.value = true;
+    let failCount = 0;
     for (const row of dataList.value) {
       try {
         const { data } = await getSocialAccountLoginStatusApi(row.id);
         loginStateMap.value[row.id] = data.isLoggedIn;
       } catch {
         loginStateMap.value[row.id] = "error";
+        failCount++;
       }
     }
     statusLoading.value = false;
-    message("登录状态已刷新", { type: "success" });
+    if (failCount === 0) {
+      message("登录状态已刷新", { type: "success" });
+    } else {
+      message(`${failCount} 个账号状态查询失败（节点离线或容器异常）`, {
+        type: "warning"
+      });
+    }
   }
 
   async function handleDelete(row) {

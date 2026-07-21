@@ -70,9 +70,18 @@ async function startLoginFlow() {
 
 function startPolling() {
   polling.value = true;
+  let failCount = 0;
+  const startedAt = Date.now();
   timer = setInterval(async () => {
+    // 二维码有效期内轮询，超时自动停止
+    if (Date.now() - startedAt > (qrTimeout.value + 30) * 1000) {
+      stopPolling();
+      message("二维码已过期，请关闭弹窗后重新打开", { type: "warning" });
+      return;
+    }
     try {
       const { data } = await getSocialAccountLoginStatusApi(props.accountId);
+      failCount = 0;
       if (data.isLoggedIn) {
         stopPolling();
         message(`账号 ${props.accountName} 登录成功`, { type: "success" });
@@ -80,7 +89,13 @@ function startPolling() {
         visible.value = false;
       }
     } catch {
-      // 轮询失败静默，等下一次
+      // 扫码后 cookies 落盘需要时间；接口偶发失败可容忍，连续失败则提示
+      failCount++;
+      if (failCount >= 10) {
+        stopPolling();
+        message("登录状态查询持续失败，请检查节点后重试", { type: "error" });
+        visible.value = false;
+      }
     }
   }, 3000);
 }
@@ -100,7 +115,7 @@ onBeforeUnmount(stopPolling);
         <img :src="qrImg" alt="小红书登录二维码" class="qr-img" />
         <p class="qr-tip">
           请用小红书 App 扫码登录（{{ qrTimeout }} 秒内有效）<br />
-          扫码成功后此弹窗会自动关闭
+          扫码确认后需等待约 30 秒，登录成功后此弹窗会自动关闭
         </p>
       </template>
       <p v-else-if="!loading" class="qr-tip">二维码获取失败，请重试</p>
