@@ -1,22 +1,40 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { message } from "@/utils/message";
 import {
   getSocialAccountLoginStatusApi,
   getSocialAccountQrcodeApi
 } from "@/api/social/account";
 
-const props = defineProps<{
-  modelValue: boolean;
-  accountId: string;
-  accountName: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean;
+    accountId: string;
+    accountName: string;
+    platform?: string;
+  }>(),
+  { platform: "xhs" }
+);
 
 const emit = defineEmits(["update:modelValue", "loggedIn"]);
+
+/** 平台扫码提示文案 */
+const platformTips = computed(() =>
+  props.platform === "bili"
+    ? {
+        appName: "哔哩哔哩",
+        extra: "登录成功后此弹窗会自动关闭"
+      }
+    : {
+        appName: "小红书",
+        extra: "扫码确认后需等待约 30 秒，登录成功后此弹窗会自动关闭"
+      }
+);
 
 const visible = ref(props.modelValue);
 const qrImg = ref("");
 const qrTimeout = ref(0);
+const qrStatus = ref("");
 const loading = ref(false);
 const polling = ref(false);
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -47,8 +65,12 @@ async function startLoginFlow() {
   stopPolling();
   loading.value = true;
   qrImg.value = "";
+  qrStatus.value = "";
   try {
-    const { data } = await getSocialAccountQrcodeApi(props.accountId);
+    const { data } = await getSocialAccountQrcodeApi(
+      props.accountId,
+      props.platform
+    );
     if (data.isLoggedIn) {
       message("该账号已是登录状态", { type: "success" });
       emit("loggedIn");
@@ -72,7 +94,7 @@ function startPolling() {
   polling.value = true;
   let failCount = 0;
   const startedAt = Date.now();
-  // 用递归 setTimeout：状态查询耗时 4 秒以上，避免 setInterval 请求叠加
+  // 用递归 setTimeout：状态查询耗时较长，避免 setInterval 请求叠加
   const poll = async () => {
     if (!polling.value) return;
     // 二维码有效期内轮询，超时自动停止
@@ -82,7 +104,10 @@ function startPolling() {
       return;
     }
     try {
-      const { data } = await getSocialAccountLoginStatusApi(props.accountId);
+      const { data } = await getSocialAccountLoginStatusApi(
+        props.accountId,
+        props.platform
+      );
       failCount = 0;
       if (data.isLoggedIn) {
         stopPolling();
@@ -91,6 +116,8 @@ function startPolling() {
         visible.value = false;
         return;
       }
+      // 扫码中间态（"已扫码，请在手机上确认"/"二维码已过期"）
+      qrStatus.value = data.qrStatus ?? "";
     } catch {
       // 扫码后 cookies 落盘需要时间；接口偶发失败可容忍，连续失败则提示
       failCount++;
@@ -120,11 +147,14 @@ onBeforeUnmount(stopPolling);
   >
     <div v-loading="loading" class="qr-wrapper">
       <template v-if="qrImg">
-        <img :src="qrImg" alt="小红书登录二维码" class="qr-img" />
+        <img :src="qrImg" alt="登录二维码" class="qr-img" />
         <p class="qr-tip">
-          请用小红书 App 扫码登录（{{ qrTimeout }} 秒内有效）<br />
-          扫码确认后需等待约 30 秒，登录成功后此弹窗会自动关闭
+          请用{{ platformTips.appName }} App 扫码登录（{{ qrTimeout }}
+          秒内有效）
+          <br />
+          {{ platformTips.extra }}
         </p>
+        <p v-if="qrStatus" class="qr-status">{{ qrStatus }}</p>
       </template>
       <p v-else-if="!loading" class="qr-tip">二维码获取失败，请重试</p>
     </div>
@@ -148,6 +178,13 @@ onBeforeUnmount(stopPolling);
   margin-top: 12px;
   font-size: 13px;
   color: var(--el-text-color-secondary);
+  text-align: center;
+}
+
+.qr-status {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--el-color-warning);
   text-align: center;
 }
 </style>

@@ -23,10 +23,12 @@ const searchFormRef = ref();
 const qrVisible = ref(false);
 const qrAccountId = ref("");
 const qrAccountName = ref("");
+const qrPlatform = ref("xhs");
 
 function openQrcodeDialog(row) {
   qrAccountId.value = row.id;
   qrAccountName.value = row.accountName;
+  qrPlatform.value = row.platform;
   qrVisible.value = true;
 }
 
@@ -189,6 +191,7 @@ const {
       v-model="qrVisible"
       :account-id="qrAccountId"
       :account-name="qrAccountName"
+      :platform="qrPlatform"
       @logged-in="refreshLoginStatus"
     />
   </div>

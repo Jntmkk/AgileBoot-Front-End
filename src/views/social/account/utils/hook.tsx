@@ -17,8 +17,14 @@ import {
 } from "@/api/social/account";
 import { SocialAccountForm } from "./types";
 
-/** 登录状态：true 已登录 / false 未登录 / "error" 节点离线或容器异常 */
+/** 登录状态：true 已登录 / false 未登录 / "error" 节点离线或接口异常 */
 type LoginState = boolean | "error" | undefined;
+
+/** 平台标识 -> 展示名 */
+const PLATFORM_LABELS: Record<string, string> = {
+  xhs: "小红书",
+  bili: "B站"
+};
 
 export function useAccountHook(openQrcodeDialog: (row) => void) {
   const defaultSort: Sort = {
@@ -47,9 +53,9 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
   const multipleSelection = ref([]);
   /** 账号ID -> 登录状态 */
   const loginStateMap = ref<Record<string, LoginState>>({});
-  /** 账号ID -> 已登录账号的昵称/小红书号 */
+  /** 账号ID -> 已登录账号的昵称/平台UID */
   const loginProfileMap = ref<
-    Record<string, { nickname?: string; redId?: string }>
+    Record<string, { nickname?: string; platformUid?: string }>
   >({});
   const statusLoading = ref(false);
 
@@ -69,7 +75,7 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
       width: 90,
       cellRenderer: ({ row, props }) => (
         <el-tag size={props.size} effect="plain">
-          {row.platform === "xhs" ? "小红书" : row.platform}
+          {PLATFORM_LABELS[row.platform] ?? row.platform}
         </el-tag>
       )
     },
@@ -90,7 +96,7 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
     },
     {
       label: "平台账号",
-      prop: "xhsUserId",
+      prop: "platformUserId",
       minWidth: 120,
       cellRenderer: ({ row }) => {
         const profile = loginProfileMap.value[row.id];
@@ -98,15 +104,15 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
           return (
             <span>
               {profile.nickname}
-              {profile.redId ? (
+              {profile.platformUid ? (
                 <span style="color: var(--el-text-color-secondary); font-size: 12px">
-                  ({profile.redId})
+                  ({profile.platformUid})
                 </span>
               ) : null}
             </span>
           );
         }
-        return row.xhsUserId ?? "-";
+        return row.platformUserId ?? "-";
       }
     },
     {
@@ -118,7 +124,7 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
         if (state === "error") {
           return (
             <el-tag size={props.size} type="danger" effect="plain">
-              节点离线
+              {row.platform === "xhs" ? "节点离线" : "查询失败"}
             </el-tag>
           );
         }
@@ -204,18 +210,21 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
     pagination.total = data.total;
   }
 
-  /** 逐个查询账号实时登录状态（容器调用较重，串行避免打爆节点） */
+  /** 逐个查询账号实时登录状态（xhs容器调用较重，串行避免打爆节点） */
   async function refreshLoginStatus() {
     statusLoading.value = true;
     let failCount = 0;
     for (const row of dataList.value) {
       try {
-        const { data } = await getSocialAccountLoginStatusApi(row.id);
+        const { data } = await getSocialAccountLoginStatusApi(
+          row.id,
+          row.platform
+        );
         loginStateMap.value[row.id] = data.isLoggedIn;
         if (data.isLoggedIn) {
           loginProfileMap.value[row.id] = {
             nickname: data.nickname,
-            redId: data.redId
+            platformUid: data.platformUid
           };
         }
       } catch {
@@ -227,7 +236,7 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
     if (failCount === 0) {
       message("登录状态已刷新", { type: "success" });
     } else {
-      message(`${failCount} 个账号状态查询失败（节点离线或容器异常）`, {
+      message(`${failCount} 个账号状态查询失败（节点离线或接口异常）`, {
         type: "warning"
       });
     }
@@ -273,10 +282,11 @@ export function useAccountHook(openQrcodeDialog: (row) => void) {
 
   async function handleAdd(row, done) {
     await addSocialAccountApi(row as SocialAccountRequest).then(() => {
-      message(
-        `新增账号 ${row.accountName} 成功，请到节点执行 add-account.sh xhs <账号ID> 后扫码登录`,
-        { type: "success", duration: 6000 }
-      );
+      const tip =
+        row.platform === "xhs"
+          ? `新增账号 ${row.accountName} 成功，请到节点执行 add-account.sh xhs <账号ID> 后扫码登录`
+          : `新增账号 ${row.accountName} 成功，可直接扫码登录`;
+      message(tip, { type: "success", duration: 6000 });
       done();
       getAccountList();
     });

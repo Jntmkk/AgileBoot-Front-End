@@ -39,6 +39,7 @@ defineExpose({ getFormRuleRef });
         class="!w-[180px]"
       >
         <el-option label="小红书" value="xhs" />
+        <el-option label="B站" value="bili" />
         <!-- 预留：抖音 -->
       </el-select>
     </el-form-item>
@@ -51,7 +52,11 @@ defineExpose({ getFormRuleRef });
       />
     </el-form-item>
 
-    <el-form-item label="所在节点" prop="nodeName">
+    <el-form-item
+      v-if="accountData.platform === 'xhs'"
+      label="所在节点"
+      prop="nodeName"
+    >
       <el-input
         v-model="accountData.nodeName"
         clearable

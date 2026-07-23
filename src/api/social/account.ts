@@ -10,7 +10,7 @@ export type SocialAccountDTO = {
   id: string;
   platform: string;
   accountName: string;
-  xhsUserId: string;
+  platformUserId: string;
   nodeName: string;
   proxyUrl: string;
   status: number;
@@ -30,16 +30,18 @@ export type SocialAccountRequest = {
   remark?: string;
 };
 
-export type XhsLoginStatus = {
+export type SocialLoginStatus = {
   isLoggedIn: boolean;
   username: string;
   /** 真实账号昵称（登录时由后端补充） */
   nickname?: string;
-  /** 小红书号（登录时由后端补充） */
-  redId?: string;
+  /** 平台侧用户ID：小红书号/B站mid（登录时由后端补充） */
+  platformUid?: string;
+  /** 扫码中间态提示（如"已扫码，请在手机上确认"/"二维码已过期"） */
+  qrStatus?: string;
 };
 
-export type XhsQrcode = {
+export type SocialQrcode = {
   /** base64 图片（可能带 data:image 前缀） */
   img: string;
   /** 二维码有效期（秒） */
@@ -82,23 +84,29 @@ export const deleteSocialAccountApi = (data: Array<number>) => {
   });
 };
 
-/** 查询账号实时登录状态（容器需启动浏览器导航，耗时 4~60 秒，覆盖默认 10s 超时） */
-export const getSocialAccountLoginStatusApi = (id: string) => {
-  return http.request<ResponseData<XhsLoginStatus>>(
+/**
+ * 查询账号实时登录状态。
+ * xhs 容器需启动浏览器导航，耗时 4~60 秒（90s 超时）；bili 是轻量 API（15s 超时）
+ */
+export const getSocialAccountLoginStatusApi = (
+  id: string,
+  platform?: string
+) => {
+  return http.request<ResponseData<SocialLoginStatus>>(
     "get",
     `/social/accounts/${id}/loginStatus`,
     {},
-    { timeout: 90000 }
+    { timeout: platform === "bili" ? 15000 : 90000 }
   );
 };
 
-/** 获取扫码登录二维码（同上，覆盖默认 10s 超时） */
-export const getSocialAccountQrcodeApi = (id: string) => {
-  return http.request<ResponseData<XhsQrcode>>(
+/** 获取扫码登录二维码（超时策略同上） */
+export const getSocialAccountQrcodeApi = (id: string, platform?: string) => {
+  return http.request<ResponseData<SocialQrcode>>(
     "get",
     `/social/accounts/${id}/qrcode`,
     {},
-    { timeout: 90000 }
+    { timeout: platform === "bili" ? 15000 : 90000 }
   );
 };
 
