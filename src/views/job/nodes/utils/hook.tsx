@@ -1,6 +1,7 @@
-import { ref, onMounted } from "vue";
+import { ref, onMounted, reactive } from "vue";
 import dayjs from "dayjs";
-import type { TableColumnList } from "@pureadmin/table";
+import type { TableColumnList, PaginationProps } from "@pureadmin/table";
+import { CommonUtils } from "@/utils/common";
 import { getJobNodesApi, type JobNodeDTO } from "@/api/job";
 
 const STATUS_TYPE: Record<string, string> = {
@@ -20,6 +21,13 @@ const STATUS_LABEL: Record<string, string> = {
 export function useJobNodeHook() {
   const pageLoading = ref(false);
   const dataList = ref<JobNodeDTO[]>([]);
+
+  const pagination = reactive<PaginationProps>({
+    total: 0,
+    pageSize: 10,
+    currentPage: 1,
+    background: true
+  });
 
   const columns: TableColumnList = [
     { label: "节点ID", prop: "nodeId", minWidth: 150 },
@@ -61,7 +69,7 @@ export function useJobNodeHook() {
     },
     { label: "协议", prop: "protocol", width: 70 },
     {
-      label: "最后心跳", prop: "lastHeartbeat", width: 170,
+      label: "最后心跳", prop: "lastHeartbeat", minWidth: 170,
       formatter: ({ lastHeartbeat }) =>
         lastHeartbeat ? dayjs(lastHeartbeat).format("YYYY-MM-DD HH:mm:ss") : "-"
     }
@@ -72,6 +80,7 @@ export function useJobNodeHook() {
     try {
       const res = await getJobNodesApi();
       dataList.value = res.data || [];
+      pagination.total = dataList.value.length;
     } finally {
       pageLoading.value = false;
     }
@@ -79,5 +88,5 @@ export function useJobNodeHook() {
 
   onMounted(() => getList());
 
-  return { pageLoading, dataList, columns, getList };
+  return { pageLoading, dataList, columns, pagination, getList };
 }

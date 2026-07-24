@@ -23,10 +23,11 @@
       </template>
       <template v-slot="{ size, dynamicColumns }">
         <pure-table
-          border adaptive align-whole="center" table-layout="auto"
+          border adaptive align-whole="center" showOverflowTooltip table-layout="auto"
           :loading="pageLoading" :size="size" :data="dataList"
           :columns="dynamicColumns" :pagination="pagination"
-          :header-cell-style="{ background: 'var(--el-fill-color-light)', color: 'var(--el-text-color-primary)' }"
+          :paginationSmall="size === 'small' ? true : false"
+          :header-cell-style="{ background: 'var(--el-table-row-hover-bg-color)', color: 'var(--el-text-color-primary)' }"
           @page-size-change="getList"
           @page-current-change="getList"
         >
