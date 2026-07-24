@@ -1,11 +1,16 @@
 <script setup lang="tsx">
-import { onMounted, reactive, ref } from "vue";
+import { h, onMounted, reactive, ref } from "vue";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import Refresh from "@iconify-icons/ep/refresh";
-import { type PaginationProps } from "@pureadmin/table";
+import { addDialog } from "@/components/ReDialog";
+import { message } from "@/utils/message";
 import { CommonUtils } from "@/utils/common";
-import { getJobTemplatesApi, type JobTemplateDTO } from "@/api/job";
+import type { PaginationProps, TableColumnList } from "@pureadmin/table";
+import {
+  getJobTemplatesApi,
+  createJobTemplateApi,
+  type JobTemplateDTO
+} from "@/api/job";
 
 defineOptions({ name: "JobTemplateList" });
 
@@ -46,6 +51,50 @@ async function getList() {
   pagination.total = data.length;
 }
 
+// 新建模板弹窗
+const formRef = ref();
+function openCreateDialog() {
+  const formInline = reactive({ templateCode: "", templateName: "", bizType: "BILI_TRACK", description: "" });
+  addDialog({
+    title: "新建模板", props: { formInline }, width: "40%", draggable: true, closeOnClickModal: false,
+    contentRenderer: () =>
+      h(
+        <el-form ref={formRef} model={formInline} label-width="100px">
+          <el-form-item label="模板编码" required>
+            <el-input v-model={formInline.templateCode} placeholder="如 bili_track_asr_summary" />
+          </el-form-item>
+          <el-form-item label="模板名称" required>
+            <el-input v-model={formInline.templateName} placeholder="如 B站UP主跟踪" />
+          </el-form-item>
+          <el-form-item label="业务类型" required>
+            <el-select v-model={formInline.bizType} style="width:100%">
+              <el-option label="B站跟踪" value="BILI_TRACK" />
+              <el-option label="小红书" value="SOCIAL_XHS" />
+              <el-option label="ASR转写" value="ASR_SUMMARY" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="描述">
+            <el-input v-model={formInline.description} placeholder="模板用途说明" />
+          </el-form-item>
+        </el-form>
+      ),
+    beforeSure: async (done, { options }) => {
+      const d = options.props.formInline;
+      if (!d.templateCode || !d.templateName || !d.bizType) {
+        message("模板编码、名称、业务类型不能为空", { type: "warning" });
+        return;
+      }
+      await createJobTemplateApi({
+        templateCode: d.templateCode, templateName: d.templateName,
+        bizType: d.bizType, description: d.description || undefined
+      });
+      message("创建成功", { type: "success" });
+      getList();
+      done();
+    }
+  });
+}
+
 onMounted(getList);
 </script>
 
@@ -53,19 +102,15 @@ onMounted(getList);
   <div class="main">
     <PureTableBar title="模板管理" :columns="columns" @refresh="getList">
       <template #buttons>
-        <el-button :icon="useRenderIcon(Refresh)" @click="getList">刷新</el-button>
+        <el-button type="primary" :icon="useRenderIcon('ep:plus')" @click="openCreateDialog">
+          新建模板
+        </el-button>
       </template>
       <template v-slot="{ size, dynamicColumns }">
         <pure-table
-          border
-          align-whole="center"
-          showOverflowTooltip
-          table-layout="auto"
-          :loading="pageLoading"
-          :size="size"
-          adaptive
-          :data="dataList"
-          :columns="dynamicColumns"
+          border align-whole="center" showOverflowTooltip table-layout="auto"
+          :loading="pageLoading" :size="size" adaptive
+          :data="dataList" :columns="dynamicColumns"
           :pagination="pagination"
           :paginationSmall="size === 'small' ? true : false"
           :header-cell-style="{

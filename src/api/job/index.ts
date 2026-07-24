@@ -120,3 +120,18 @@ export const getJobTemplatesApi = () => {
     "/job/templates"
   );
 };
+
+export type CreateTemplateCommand = {
+  templateCode: string;
+  templateName: string;
+  bizType: string;
+  description?: string;
+};
+
+export const createJobTemplateApi = (data: CreateTemplateCommand) => {
+  return http.request<ResponseData<void>>(
+    "post",
+    "/job/templates",
+    { data }
+  );
+};
