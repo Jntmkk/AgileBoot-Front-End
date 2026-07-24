@@ -103,3 +103,20 @@ export const getJobNodesApi = () => {
     "/job/nodes"
   );
 };
+
+export type JobTemplateDTO = {
+  id: number;
+  templateCode: string;
+  templateName: string;
+  bizType: string;
+  description?: string;
+  status: number;
+  version: number;
+};
+
+export const getJobTemplatesApi = () => {
+  return http.request<ResponseData<JobTemplateDTO[]>>(
+    "get",
+    "/job/templates"
+  );
+};

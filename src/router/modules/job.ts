@@ -24,6 +24,12 @@ export default {
       meta: { title: "任务详情", showLink: false }
     },
     {
+      path: "/job/templates",
+      name: "JobTemplateList",
+      component: () => import("@/views/job/templates/index.vue"),
+      meta: { title: "模板管理" }
+    },
+    {
       path: "/job/nodes",
       name: "JobNodeList",
       component: () => import("@/views/job/nodes/index.vue"),

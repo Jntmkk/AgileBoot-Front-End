@@ -28,7 +28,8 @@ const props = defineProps<{
 }>();
 
 const formRef = ref<FormInstance>();
-const form = reactive({ ...props.formInline });
+// 直接引用 props 对象（不拷贝），保证 dialog beforeSure 能读到最新值
+const form = ref(props.formInline);
 
 const rules = reactive<FormRules>({
   templateCode: [
