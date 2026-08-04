@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import dayjs from "dayjs";
 import { getSocialPostInfoApi, SocialSyncPostDTO } from "@/api/social/post";
 
@@ -16,6 +16,13 @@ const visible = ref(false);
 const loading = ref(false);
 const detail = ref<SocialSyncPostDTO | null>(null);
 const activeTab = ref("summary");
+
+const bvid = computed(() => {
+  if (!detail.value || detail.value.postType !== 2) return null;
+  const url = detail.value.videoUrl || detail.value.platformPostUrl || "";
+  const match = url.match(/BV[0-9A-Za-z]{10}/);
+  return match ? match[0] : null;
+});
 
 watch(
   () => props.modelValue,
@@ -106,14 +113,25 @@ function parseImages(images?: string): string[] {
 
         <!-- 封面/图片 -->
         <div
-          v-if="detail.coverUrl || parseImages(detail.images).length"
+          v-if="detail.coverUrl || parseImages(detail.images).length || bvid"
           class="covers mb-4"
         >
+          <div v-if="bvid" class="video-player">
+            <iframe
+              :src="`https://player.bilibili.com/player.html?bvid=${bvid}&page=1&high_quality=1&danmaku=0&autoplay=0`"
+              width="100%"
+              height="100%"
+              frameborder="0"
+              allowfullscreen
+              scrolling="no"
+            />
+          </div>
           <el-image
             v-if="detail.coverUrl"
             :src="detail.coverUrl"
             fit="cover"
             class="cover-img"
+            referrerpolicy="no-referrer"
             :preview-src-list="[detail.coverUrl]"
             preview-teleported
           />
@@ -123,6 +141,7 @@ function parseImages(images?: string): string[] {
             :src="img"
             fit="cover"
             class="cover-img"
+            referrerpolicy="no-referrer"
             :preview-src-list="parseImages(detail.images)"
             :initial-index="i"
             preview-teleported
@@ -164,6 +183,19 @@ function parseImages(images?: string): string[] {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.video-player {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+  border-radius: 6px;
+
+  iframe {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .cover-img {
