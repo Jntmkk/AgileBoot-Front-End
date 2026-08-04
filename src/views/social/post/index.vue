@@ -8,6 +8,8 @@ import Search from "@iconify-icons/ep/search";
 import View from "@iconify-icons/ep/view";
 import VideoPlay from "@iconify-icons/ep/video-play";
 import Document from "@iconify-icons/ep/document";
+import Link from "@iconify-icons/ep/link";
+import Download from "@iconify-icons/ep/download";
 import { type PaginationProps } from "@pureadmin/table";
 import { message } from "@/utils/message";
 import { CommonUtils } from "@/utils/common";
@@ -18,6 +20,12 @@ import {
   retriggerTranscribeApi,
   retriggerSummaryApi
 } from "@/api/social/post";
+import {
+  syncByLinkApi,
+  backfillApi,
+  type SyncByLinkCommand,
+  type BackfillCommand
+} from "@/api/social/follow";
 import PostDetail from "./detail.vue";
 
 /** 组件 name 与菜单表 router_name 一致 */
@@ -39,6 +47,19 @@ const pageLoading = ref(true);
 
 const detailVisible = ref(false);
 const currentId = ref("");
+
+const linkDialogVisible = ref(false);
+const linkForm = reactive<SyncByLinkCommand>({
+  platform: "bili",
+  url: ""
+});
+
+const backfillDialogVisible = ref(false);
+const backfillForm = reactive<BackfillCommand>({
+  platform: "bili",
+  startTime: "",
+  endTime: ""
+});
 
 /** 音频状态文案 + 标签类型 */
 const AUDIO_STATUS_MAP: Record<number, { text: string; type: string }> = {
@@ -144,6 +165,41 @@ async function onResummarize(row: SocialSyncPostDTO) {
   });
 }
 
+function openLinkDialog() {
+  linkForm.platform = "bili";
+  linkForm.url = "";
+  linkDialogVisible.value = true;
+}
+
+async function handleSyncByLink() {
+  if (!linkForm.url.trim()) {
+    message("请输入链接", { type: "warning" });
+    return;
+  }
+  await syncByLinkApi(linkForm).then(() => {
+    message("已发送同步链接任务", { type: "success" });
+    linkDialogVisible.value = false;
+  });
+}
+
+function openBackfillDialog() {
+  backfillForm.platform = "bili";
+  backfillForm.startTime = "";
+  backfillForm.endTime = "";
+  backfillDialogVisible.value = true;
+}
+
+async function handleBackfill() {
+  if (!backfillForm.startTime || !backfillForm.endTime) {
+    message("请选择时间范围", { type: "warning" });
+    return;
+  }
+  await backfillApi(backfillForm).then(() => {
+    message("已发送补数据任务", { type: "success" });
+    backfillDialogVisible.value = false;
+  });
+}
+
 onMounted(getPostList);
 </script>
 
@@ -218,6 +274,20 @@ onMounted(getPostList);
         <el-button :icon="useRenderIcon(Refresh)" @click="getPostList">
           刷新
         </el-button>
+        <el-button
+          type="primary"
+          :icon="useRenderIcon(Link)"
+          @click="openLinkDialog"
+        >
+          同步指定链接
+        </el-button>
+        <el-button
+          type="warning"
+          :icon="useRenderIcon(Download)"
+          @click="openBackfillDialog"
+        >
+          补数据
+        </el-button>
       </template>
       <template v-slot="{ size, dynamicColumns }">
         <pure-table
@@ -278,6 +348,73 @@ onMounted(getPostList);
     </PureTableBar>
 
     <PostDetail v-model="detailVisible" :post-id="currentId" />
+
+    <!-- 同步指定链接 -->
+    <el-dialog
+      v-model="linkDialogVisible"
+      title="同步指定链接"
+      width="520px"
+      destroy-on-close
+      :close-on-click-modal="false"
+    >
+      <el-form :model="linkForm" label-width="80px">
+        <el-form-item label="平台">
+          <el-select v-model="linkForm.platform" class="!w-[200px]">
+            <el-option label="B站" value="bili" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="链接">
+          <el-input
+            v-model="linkForm.url"
+            type="textarea"
+            :rows="3"
+            placeholder="粘贴 B站动态/视频链接"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="linkDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSyncByLink">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 按时间范围补数据 -->
+    <el-dialog
+      v-model="backfillDialogVisible"
+      title="按时间范围补数据"
+      width="560px"
+      destroy-on-close
+      :close-on-click-modal="false"
+    >
+      <el-form :model="backfillForm" label-width="80px">
+        <el-form-item label="平台">
+          <el-select v-model="backfillForm.platform" class="!w-[200px]">
+            <el-option label="B站" value="bili" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="时间范围">
+          <el-date-picker
+            v-model="backfillForm.startTime"
+            type="datetime"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            placeholder="开始时间"
+            class="!w-[180px]"
+          />
+          <span class="mx-2">~</span>
+          <el-date-picker
+            v-model="backfillForm.endTime"
+            type="datetime"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            placeholder="结束时间"
+            class="!w-[180px]"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="backfillDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleBackfill">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
