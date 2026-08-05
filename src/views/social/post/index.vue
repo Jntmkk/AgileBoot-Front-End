@@ -75,7 +75,7 @@ const AUDIO_STATUS_MAP: Record<number, { text: string; type: string }> = {
   6: { text: "转写失败", type: "danger" }
 };
 
-const DISPLAY_TITLE_MAX = 50;
+const DISPLAY_TITLE_MAX = 30;
 
 function getDisplayTitle(row: SocialSyncPostDTO) {
   const text = (row.title || row.content || "").trim().replace(/\s+/g, " ");
@@ -86,11 +86,11 @@ function getDisplayTitle(row: SocialSyncPostDTO) {
 }
 
 const columns: TableColumnList = [
-  { label: "ID", prop: "id", width: 70 },
+  { label: "ID", prop: "id", width: 60 },
   {
     label: "类型",
     prop: "postType",
-    width: 80,
+    width: 60,
     cellRenderer: ({ row, props }) => (
       <el-tag
         size={props.size}
@@ -104,17 +104,17 @@ const columns: TableColumnList = [
   {
     label: "标题",
     prop: "title",
-    minWidth: 220,
+    minWidth: 180,
     cellRenderer: ({ row }) => {
       const title = getDisplayTitle(row);
       return <span title={title === "-" ? "" : title}>{title}</span>;
     }
   },
-  { label: "作者", prop: "nickname", minWidth: 110 },
+  { label: "作者", prop: "nickname", minWidth: 90 },
   {
     label: "音频状态",
     prop: "audioStatus",
-    width: 100,
+    width: 80,
     cellRenderer: ({ row, props }) => {
       const s = AUDIO_STATUS_MAP[row.audioStatus] || {
         text: "未知",
@@ -130,25 +130,25 @@ const columns: TableColumnList = [
   {
     label: "点赞",
     prop: "likeCount",
-    width: 80,
+    width: 60,
     formatter: ({ likeCount }) => likeCount ?? "-"
   },
   {
     label: "发布时间",
     prop: "publishedAt",
-    minWidth: 160,
+    width: 130,
     formatter: ({ publishedAt }) =>
       publishedAt ? dayjs(publishedAt).format("YYYY-MM-DD HH:mm") : "-"
   },
   {
     label: "创建时间",
     prop: "createTime",
-    minWidth: 160,
+    width: 130,
     sortable: "custom",
     formatter: ({ createTime }) =>
       createTime ? dayjs(createTime).format("YYYY-MM-DD HH:mm") : "-"
   },
-  { label: "操作", fixed: "right", width: 200, slot: "operation" }
+  { label: "操作", fixed: "right", width: 100, slot: "operation" }
 ];
 
 async function getPostList() {
@@ -260,7 +260,7 @@ onMounted(() => {
       ref="searchFormRef"
       :inline="true"
       :model="searchFormParams"
-      class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px]"
+      class="search-form bg-bg_color w-[99/100] pl-4 pt-2 pb-1"
       @keyup.enter="onSearch"
     >
       <el-form-item label="标题：" prop="title">
@@ -268,7 +268,8 @@ onMounted(() => {
           v-model="searchFormParams.title"
           placeholder="按标题模糊搜索"
           clearable
-          class="!w-[200px]"
+          size="small"
+          class="!w-[160px]"
         />
       </el-form-item>
       <el-form-item label="作者：" prop="nickname">
@@ -276,7 +277,8 @@ onMounted(() => {
           v-model="searchFormParams.nickname"
           placeholder="按作者昵称搜索"
           clearable
-          class="!w-[160px]"
+          size="small"
+          class="!w-[120px]"
         />
       </el-form-item>
       <el-form-item label="类型：" prop="postType">
@@ -284,7 +286,8 @@ onMounted(() => {
           v-model="searchFormParams.postType"
           placeholder="全部"
           clearable
-          class="!w-[120px]"
+          size="small"
+          class="!w-[100px]"
         >
           <el-option label="图文" :value="1" />
           <el-option label="视频" :value="2" />
@@ -295,7 +298,8 @@ onMounted(() => {
           v-model="searchFormParams.audioStatus"
           placeholder="全部"
           clearable
-          class="!w-[130px]"
+          size="small"
+          class="!w-[110px]"
         >
           <el-option
             v-for="(v, k) in AUDIO_STATUS_MAP"
@@ -308,13 +312,18 @@ onMounted(() => {
       <el-form-item>
         <el-button
           type="primary"
+          size="small"
           :icon="useRenderIcon(Search)"
           :loading="pageLoading"
           @click="onSearch"
         >
           搜索
         </el-button>
-        <el-button :icon="useRenderIcon(Refresh)" @click="resetForm">
+        <el-button
+          size="small"
+          :icon="useRenderIcon(Refresh)"
+          @click="resetForm"
+        >
           重置
         </el-button>
       </el-form-item>
@@ -322,10 +331,15 @@ onMounted(() => {
 
     <PureTableBar title="动态列表" :columns="columns" @refresh="getPostList">
       <template #buttons>
-        <el-button :icon="useRenderIcon(Refresh)" @click="getPostList">
+        <el-button
+          size="small"
+          :icon="useRenderIcon(Refresh)"
+          @click="getPostList"
+        >
           刷新
         </el-button>
         <el-button
+          size="small"
           type="primary"
           :icon="useRenderIcon(Link)"
           @click="openLinkDialog"
@@ -333,6 +347,7 @@ onMounted(() => {
           同步指定链接
         </el-button>
         <el-button
+          size="small"
           type="warning"
           :icon="useRenderIcon(Download)"
           @click="openBackfillDialog"
@@ -355,8 +370,10 @@ onMounted(() => {
           :paginationSmall="size === 'small' ? true : false"
           :header-cell-style="{
             background: 'var(--el-table-row-hover-bg-color)',
-            color: 'var(--el-text-color-primary)'
+            color: 'var(--el-text-color-primary)',
+            padding: '4px 0'
           }"
+          :cell-style="{ padding: '4px 0' }"
           @page-size-change="getPostList"
           @page-current-change="getPostList"
           @sort-change="onSortChange"
@@ -366,34 +383,31 @@ onMounted(() => {
               class="reset-margin"
               link
               type="primary"
+              title="详情"
               :size="size"
               :icon="useRenderIcon(View)"
               @click="openDetail(row)"
-            >
-              详情
-            </el-button>
+            />
             <el-button
               v-if="row.postType === 2"
               class="reset-margin"
               link
               type="warning"
+              title="重转写"
               :size="size"
               :icon="useRenderIcon(VideoPlay)"
               @click="onRetranscribe(row)"
-            >
-              重转写
-            </el-button>
+            />
             <el-button
               v-if="row.audioTranscript"
               class="reset-margin"
               link
               type="success"
+              title="重总结"
               :size="size"
               :icon="useRenderIcon(Document)"
               @click="onResummarize(row)"
-            >
-              重总结
-            </el-button>
+            />
           </template>
         </pure-table>
       </template>
@@ -489,7 +503,8 @@ onMounted(() => {
 <style scoped lang="scss">
 .search-form {
   :deep(.el-form-item) {
-    margin-bottom: 12px;
+    margin-right: 12px;
+    margin-bottom: 6px;
   }
 }
 </style>
