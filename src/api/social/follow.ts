@@ -41,6 +41,7 @@ export type BackfillCommand = {
   startTime: string;
   endTime: string;
   platform?: string;
+  upId?: string;
 };
 
 /** 关注UP列表 */

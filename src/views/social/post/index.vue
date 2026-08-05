@@ -23,8 +23,10 @@ import {
 import {
   syncByLinkApi,
   backfillApi,
+  getSocialFollowUpListApi,
   type SyncByLinkCommand,
-  type BackfillCommand
+  type BackfillCommand,
+  type SocialFollowUpDTO
 } from "@/api/social/follow";
 import PostDetail from "./detail.vue";
 
@@ -44,6 +46,7 @@ const pagination: PaginationProps = reactive({
 const searchFormParams = reactive<SocialSyncPostQuery>({});
 const dataList = ref<SocialSyncPostDTO[]>([]);
 const pageLoading = ref(true);
+const followUpList = ref<SocialFollowUpDTO[]>([]);
 
 const detailVisible = ref(false);
 const currentId = ref("");
@@ -186,6 +189,7 @@ function openBackfillDialog() {
   backfillForm.platform = "bili";
   backfillForm.startTime = "";
   backfillForm.endTime = "";
+  backfillForm.upId = "";
   backfillDialogVisible.value = true;
 }
 
@@ -200,7 +204,20 @@ async function handleBackfill() {
   });
 }
 
-onMounted(getPostList);
+async function getFollowUpList() {
+  const { data } = await getSocialFollowUpListApi({
+    platform: "bili",
+    status: 1,
+    syncEnabled: 1,
+    pageSize: 100
+  });
+  followUpList.value = data.rows || [];
+}
+
+onMounted(() => {
+  getPostList();
+  getFollowUpList();
+});
 </script>
 
 <template>
@@ -390,6 +407,22 @@ onMounted(getPostList);
         <el-form-item label="平台">
           <el-select v-model="backfillForm.platform" class="!w-[200px]">
             <el-option label="B站" value="bili" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="UP主">
+          <el-select
+            v-model="backfillForm.upId"
+            clearable
+            filterable
+            placeholder="选择UP主（留空表示全部）"
+            class="!w-[360px]"
+          >
+            <el-option
+              v-for="item in followUpList"
+              :key="item.upId"
+              :label="item.upName"
+              :value="item.upId"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="时间范围">
