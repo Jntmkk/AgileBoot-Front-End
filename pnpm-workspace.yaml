@@ -4,3 +4,5 @@ allowBuilds:
   typeit: true
   vue-demi: true
 shamefullyHoist: true
+overrides:
+  "@vue/babel-plugin-jsx": 1.2.5
