@@ -75,6 +75,16 @@ const AUDIO_STATUS_MAP: Record<number, { text: string; type: string }> = {
   6: { text: "转写失败", type: "danger" }
 };
 
+const DISPLAY_TITLE_MAX = 50;
+
+function getDisplayTitle(row: SocialSyncPostDTO) {
+  const text = (row.title || row.content || "").trim().replace(/\s+/g, " ");
+  if (!text) return "-";
+  return text.length > DISPLAY_TITLE_MAX
+    ? `${text.slice(0, DISPLAY_TITLE_MAX)}...`
+    : text;
+}
+
 const columns: TableColumnList = [
   { label: "ID", prop: "id", width: 70 },
   {
@@ -91,7 +101,15 @@ const columns: TableColumnList = [
       </el-tag>
     )
   },
-  { label: "标题", prop: "title", minWidth: 220, showOverflowTooltip: true },
+  {
+    label: "标题",
+    prop: "title",
+    minWidth: 220,
+    cellRenderer: ({ row }) => {
+      const title = getDisplayTitle(row);
+      return <span title={title === "-" ? "" : title}>{title}</span>;
+    }
+  },
   { label: "作者", prop: "nickname", minWidth: 110 },
   {
     label: "音频状态",
@@ -122,6 +140,14 @@ const columns: TableColumnList = [
     formatter: ({ publishedAt }) =>
       publishedAt ? dayjs(publishedAt).format("YYYY-MM-DD HH:mm") : "-"
   },
+  {
+    label: "创建时间",
+    prop: "createTime",
+    minWidth: 160,
+    sortable: "custom",
+    formatter: ({ createTime }) =>
+      createTime ? dayjs(createTime).format("YYYY-MM-DD HH:mm") : "-"
+  },
   { label: "操作", fixed: "right", width: 200, slot: "operation" }
 ];
 
@@ -140,8 +166,15 @@ function onSearch() {
   getPostList();
 }
 
+function onSortChange(sort: any) {
+  CommonUtils.fillSortParams(searchFormParams, sort);
+  getPostList();
+}
+
 function resetForm() {
   searchFormRef.value?.resetFields();
+  searchFormParams.orderColumn = undefined;
+  searchFormParams.orderDirection = undefined;
   onSearch();
 }
 
@@ -228,6 +261,7 @@ onMounted(() => {
       :inline="true"
       :model="searchFormParams"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-[12px]"
+      @keyup.enter="onSearch"
     >
       <el-form-item label="标题：" prop="title">
         <el-input
@@ -325,6 +359,7 @@ onMounted(() => {
           }"
           @page-size-change="getPostList"
           @page-current-change="getPostList"
+          @sort-change="onSortChange"
         >
           <template #operation="{ row }">
             <el-button

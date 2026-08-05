@@ -24,6 +24,7 @@ export type SocialSyncPostDTO = {
   platformPostUrl: string;
   publishedAt: Date;
   syncedAt: Date;
+  createTime: Date;
   likeCount: number;
   commentCount: number;
   shareCount: number;
