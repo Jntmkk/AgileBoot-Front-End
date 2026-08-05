@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import dayjs from "dayjs";
+import MarkdownIt from "markdown-it";
 import { getSocialPostInfoApi, SocialSyncPostDTO } from "@/api/social/post";
 
+const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
 const props = defineProps<{
   modelValue: boolean;
   postId: string;
@@ -23,6 +25,10 @@ const bvid = computed(() => {
   const match = url.match(/BV[0-9A-Za-z]{10}/);
   return match ? match[0] : null;
 });
+
+const renderedSummary = computed(() =>
+  detail.value?.audioSummary ? md.render(detail.value.audioSummary) : ""
+);
 
 watch(
   () => props.modelValue,
@@ -151,9 +157,11 @@ function parseImages(images?: string): string[] {
         <!-- 内容标签页 -->
         <el-tabs v-model="activeTab">
           <el-tab-pane label="AI 总结" name="summary">
-            <div v-if="detail.audioSummary" class="text-block">
-              {{ detail.audioSummary }}
-            </div>
+            <div
+              v-if="detail.audioSummary"
+              class="text-block markdown-body"
+              v-html="renderedSummary"
+            />
             <el-empty v-else description="暂无总结" :image-size="60" />
           </el-tab-pane>
           <el-tab-pane label="语音转写" name="transcript">
@@ -214,6 +222,70 @@ function parseImages(images?: string): string[] {
   color: var(--el-text-color-primary);
   word-break: break-word;
   white-space: pre-wrap;
+}
+
+.markdown-body {
+  white-space: normal;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 12px 0 8px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  p {
+    margin: 8px 0;
+  }
+
+  ul,
+  ol {
+    padding-left: 20px;
+    margin: 8px 0;
+  }
+
+  li {
+    margin: 4px 0;
+  }
+
+  code {
+    padding: 2px 4px;
+    font-family: monospace;
+    background-color: var(--el-fill-color-light);
+    border-radius: 4px;
+  }
+
+  pre {
+    padding: 8px;
+    overflow-x: auto;
+    background-color: var(--el-fill-color-light);
+    border-radius: 4px;
+  }
+
+  pre code {
+    padding: 0;
+    background: transparent;
+  }
+
+  blockquote {
+    padding-left: 10px;
+    margin: 8px 0;
+    color: var(--el-text-color-secondary);
+    border-left: 3px solid var(--el-border-color);
+  }
+
+  a {
+    color: var(--el-color-primary);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
 .mb-4 {
