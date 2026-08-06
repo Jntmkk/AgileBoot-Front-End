@@ -104,6 +104,39 @@ function parseImages(images?: string): string[] {
           <el-descriptions-item label="评论">{{
             detail.commentCount ?? "-"
           }}</el-descriptions-item>
+          <el-descriptions-item
+            v-if="detail.audioStatus != null"
+            label="音频状态"
+          >
+            <el-tag
+              size="small"
+              :type="
+                detail.audioStatus === 6 || detail.audioStatus === 2
+                  ? 'danger'
+                  : detail.audioStatus === 3
+                  ? 'success'
+                  : detail.audioStatus === 5
+                  ? 'primary'
+                  : 'warning'
+              "
+              effect="plain"
+            >
+              {{
+                {
+                  0: "未处理",
+                  1: "待转写",
+                  2: "取址失败",
+                  3: "已总结",
+                  4: "转写中",
+                  5: "待总结",
+                  6: "转写失败"
+                }[detail.audioStatus] || "未知"
+              }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item v-if="detail.remark" label="备注" :span="2">
+            <span class="remark-text">{{ detail.remark }}</span>
+          </el-descriptions-item>
           <el-descriptions-item label="原文链接" :span="2">
             <el-link
               v-if="detail.platformPostUrl"
@@ -290,5 +323,11 @@ function parseImages(images?: string): string[] {
 
 .mb-4 {
   margin-bottom: 16px;
+}
+
+.remark-text {
+  font-size: 12px;
+  color: var(--el-color-danger);
+  word-break: break-all;
 }
 </style>

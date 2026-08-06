@@ -120,11 +120,19 @@ const columns: TableColumnList = [
         text: "未知",
         type: "info"
       };
-      return (
+      const tag = (
         <el-tag size={props.size} type={s.type as any} effect="plain">
           {s.text}
         </el-tag>
       );
+      if (row.audioStatus === 6 && row.remark) {
+        return (
+          <el-tooltip content={row.remark} placement="top" show-after={300}>
+            {tag}
+          </el-tooltip>
+        );
+      }
+      return tag;
     }
   },
   {
