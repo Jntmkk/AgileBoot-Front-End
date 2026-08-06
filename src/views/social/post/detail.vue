@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onUnmounted } from "vue";
 import dayjs from "dayjs";
 import MarkdownIt from "markdown-it";
 import { getSocialPostInfoApi, SocialSyncPostDTO } from "@/api/social/post";
@@ -18,6 +18,38 @@ const visible = ref(false);
 const loading = ref(false);
 const detail = ref<SocialSyncPostDTO | null>(null);
 const activeTab = ref("summary");
+
+// Drawer 宽度拖拽
+const drawerSize = ref(640);
+const isResizing = ref(false);
+
+function onResizeStart(e: MouseEvent) {
+  isResizing.value = true;
+  document.addEventListener("mousemove", onResizeMove);
+  document.addEventListener("mouseup", onResizeEnd);
+  document.body.style.userSelect = "none";
+  document.body.style.cursor = "ew-resize";
+  e.preventDefault();
+}
+
+function onResizeMove(e: MouseEvent) {
+  if (!isResizing.value) return;
+  const w = window.innerWidth - e.clientX;
+  drawerSize.value = Math.max(360, Math.min(1200, w));
+}
+
+function onResizeEnd() {
+  isResizing.value = false;
+  document.removeEventListener("mousemove", onResizeMove);
+  document.removeEventListener("mouseup", onResizeEnd);
+  document.body.style.userSelect = "";
+  document.body.style.cursor = "";
+}
+
+onUnmounted(() => {
+  document.removeEventListener("mousemove", onResizeMove);
+  document.removeEventListener("mouseup", onResizeEnd);
+});
 
 const bvid = computed(() => {
   if (!detail.value || detail.value.postType !== 2) return null;
@@ -71,11 +103,13 @@ function parseImages(images?: string): string[] {
 <template>
   <el-drawer
     v-model="visible"
-    size="640px"
+    :size="drawerSize"
     :title="detail?.title || '动态详情'"
     destroy-on-close
     @close="close"
   >
+    <!-- 拖拽手柄 -->
+    <div class="drawer-resize-handle" @mousedown="onResizeStart" />
     <div v-loading="loading" class="post-detail">
       <template v-if="detail">
         <!-- 元信息 -->
@@ -216,6 +250,22 @@ function parseImages(images?: string): string[] {
 </template>
 
 <style scoped lang="scss">
+.drawer-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  width: 5px;
+  height: 100%;
+  cursor: ew-resize;
+
+  &:hover,
+  &:active {
+    background-color: var(--el-color-primary);
+    opacity: 0.4;
+  }
+}
+
 .post-detail {
   padding-bottom: 20px;
 }
