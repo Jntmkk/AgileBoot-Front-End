@@ -45,6 +45,7 @@ const followUpList = ref<SocialFollowUpDTO[]>([]);
 
 const dialogVisible = ref(false);
 const dialogType = ref<"add" | "edit">("add");
+const statusValue = ref(1);
 const formData = reactive<PromptRequest>({
   upId: "",
   keyword: "",
@@ -129,19 +130,20 @@ function openDialog(type: "add" | "edit", row?: PromptDTO) {
     formData.keyword = "";
     formData.systemPrompt = "";
     formData.sortOrder = 0;
-    formData.status = 1;
+    statusValue.value = 1;
   } else if (row) {
     formData.id = Number(row.id);
     formData.upId = row.upId;
     formData.keyword = row.keyword;
     formData.systemPrompt = row.systemPrompt;
     formData.sortOrder = row.sortOrder;
-    formData.status = row.status;
+    statusValue.value = row.status ?? 1;
   }
   dialogVisible.value = true;
 }
 
 function handleSave() {
+  formData.status = statusValue.value;
   if (!formData.upId.trim()) {
     message("请选择UP", { type: "warning" });
     return;
@@ -358,7 +360,7 @@ onMounted(() => {
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-radio-group v-model="formData.status">
+          <el-radio-group v-model="statusValue">
             <el-radio :value="1">启用</el-radio>
             <el-radio :value="0">停用</el-radio>
           </el-radio-group>
