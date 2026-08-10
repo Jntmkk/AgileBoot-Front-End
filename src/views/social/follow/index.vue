@@ -118,6 +118,7 @@ const formRules = computed(() => {
   if (isCloudDrive.value) {
     base.upId = [{ required: true, message: "请输入账号名称" }];
     base.remark = [{ required: true, message: "请输入挂载路径" }];
+    base.upAvatar = [{ required: true, message: "请输入 refresh_token" }];
   } else {
     base.upId = [{ required: true, message: "请输入UP主ID" }];
     base.upName = [{ required: true, message: "请输入UP主昵称" }];
@@ -388,6 +389,21 @@ onMounted(getFollowList);
             placeholder="alist 挂载路径，如 /ali_yun_pan"
           />
         </el-form-item>
+        <el-form-item v-if="isCloudDrive" label="RefreshToken" prop="upAvatar">
+          <el-input
+            v-model="formData.upAvatar"
+            placeholder="阿里云盘 refresh_token"
+          />
+          <span class="token-help">
+            <a
+              href="https://alist.nn.ci/zh/guide/drivers/aliyundrive.html"
+              target="_blank"
+              rel="noopener"
+            >
+              如何获取 Token？
+            </a>
+          </span>
+        </el-form-item>
         <el-form-item label="状态">
           <el-radio-group v-model="formData.status">
             <el-radio :label="1">启用</el-radio>
@@ -421,6 +437,21 @@ onMounted(getFollowList);
 .search-form {
   :deep(.el-form-item) {
     margin-bottom: 12px;
+  }
+}
+
+.token-help {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+
+  a {
+    color: var(--el-color-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 </style>
