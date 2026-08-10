@@ -289,6 +289,18 @@ onMounted(() => {
           class="!w-[120px]"
         />
       </el-form-item>
+      <el-form-item label="平台：" prop="platform">
+        <el-select
+          v-model="searchFormParams.platform"
+          placeholder="全部"
+          clearable
+          size="small"
+          class="!w-[100px]"
+        >
+          <el-option label="B站" value="bili" />
+          <el-option label="阿里云盘" value="aliyun" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="类型：" prop="postType">
         <el-select
           v-model="searchFormParams.postType"
