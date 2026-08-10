@@ -447,6 +447,7 @@ onMounted(() => {
         <el-form-item label="平台">
           <el-select v-model="linkForm.platform" class="!w-[200px]">
             <el-option label="B站" value="bili" />
+            <el-option label="阿里云盘" value="aliyun" />
           </el-select>
         </el-form-item>
         <el-form-item label="链接">
@@ -476,6 +477,7 @@ onMounted(() => {
         <el-form-item label="平台">
           <el-select v-model="backfillForm.platform" class="!w-[200px]">
             <el-option label="B站" value="bili" />
+            <el-option label="阿里云盘" value="aliyun" />
           </el-select>
         </el-form-item>
         <el-form-item label="UP主">

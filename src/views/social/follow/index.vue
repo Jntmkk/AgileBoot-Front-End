@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import dayjs from "dayjs";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
@@ -64,8 +64,8 @@ const SYNC_TAG: Record<number, { text: string; type: string }> = {
 const columns: TableColumnList = [
   { label: "ID", prop: "id", width: 70 },
   { label: "平台", prop: "platform", width: 80 },
-  { label: "UP ID", prop: "upId", minWidth: 140 },
-  { label: "UP昵称", prop: "upName", minWidth: 160 },
+  { label: "来源标识", prop: "upId", minWidth: 140 },
+  { label: "名称", prop: "upName", minWidth: 160 },
   {
     label: "状态",
     prop: "status",
@@ -109,11 +109,21 @@ const columns: TableColumnList = [
   { label: "操作", fixed: "right", width: 180, slot: "operation" }
 ];
 
-const formRules = {
-  platform: [{ required: true, message: "请选择平台" }],
-  upId: [{ required: true, message: "请输入UP主ID" }],
-  upName: [{ required: true, message: "请输入UP主昵称" }]
-};
+const isCloudDrive = computed(() => formData.platform === "aliyun");
+
+const formRules = computed(() => {
+  const base: any = {
+    platform: [{ required: true, message: "请选择平台" }]
+  };
+  if (isCloudDrive.value) {
+    base.upId = [{ required: true, message: "请输入账号名称" }];
+    base.remark = [{ required: true, message: "请输入挂载路径" }];
+  } else {
+    base.upId = [{ required: true, message: "请输入UP主ID" }];
+    base.upName = [{ required: true, message: "请输入UP主昵称" }];
+  }
+  return base;
+});
 
 async function getFollowList() {
   CommonUtils.fillPaginationParams(searchFormParams, pagination);
@@ -211,9 +221,10 @@ onMounted(getFollowList);
           <el-option label="B站" value="bili" />
           <el-option label="小红书" value="xhs" />
           <el-option label="抖音" value="douyin" />
+          <el-option label="阿里云盘" value="aliyun" />
         </el-select>
       </el-form-item>
-      <el-form-item label="UP ID：" prop="upId">
+      <el-form-item label="来源标识：" prop="upId">
         <el-input
           v-model="searchFormParams.upId"
           placeholder="模糊搜索"
@@ -221,7 +232,7 @@ onMounted(getFollowList);
           class="!w-[160px]"
         />
       </el-form-item>
-      <el-form-item label="UP昵称：" prop="upName">
+      <el-form-item label="名称：" prop="upName">
         <el-input
           v-model="searchFormParams.upName"
           placeholder="模糊搜索"
@@ -267,7 +278,7 @@ onMounted(getFollowList);
     </el-form>
 
     <PureTableBar
-      title="关注UP列表"
+      title="数据来源列表"
       :columns="columns"
       @refresh="getFollowList"
     >
@@ -277,7 +288,7 @@ onMounted(getFollowList);
           :icon="useRenderIcon(Plus)"
           @click="openDialog('add')"
         >
-          新增关注UP
+          新增数据来源
         </el-button>
       </template>
       <template v-slot="{ size, dynamicColumns }">
@@ -312,7 +323,7 @@ onMounted(getFollowList);
               编辑
             </el-button>
             <el-popconfirm
-              title="确定删除该关注UP？"
+              title="确定删除该数据来源？"
               @confirm="handleDelete(row)"
             >
               <template #reference>
@@ -335,7 +346,7 @@ onMounted(getFollowList);
     <!-- 新增/编辑弹窗 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="dialogType === 'add' ? '新增关注UP' : '编辑关注UP'"
+      :title="dialogType === 'add' ? '新增数据来源' : '编辑数据来源'"
       width="520px"
       destroy-on-close
       :close-on-click-modal="false"
@@ -351,21 +362,30 @@ onMounted(getFollowList);
             <el-option label="B站" value="bili" />
             <el-option label="小红书" value="xhs" />
             <el-option label="抖音" value="douyin" />
+            <el-option label="阿里云盘" value="aliyun" />
           </el-select>
         </el-form-item>
-        <el-form-item label="UP ID" prop="upId">
+        <el-form-item :label="isCloudDrive ? '账号名称' : 'UP ID'" prop="upId">
           <el-input
             v-model="formData.upId"
-            placeholder="B站mid/小红书号/抖音号"
+            :placeholder="
+              isCloudDrive ? '阿里云盘账号名称' : 'B站mid/小红书号/抖音号'
+            "
           />
         </el-form-item>
-        <el-form-item label="UP昵称" prop="upName">
+        <el-form-item v-if="!isCloudDrive" label="UP昵称" prop="upName">
           <el-input v-model="formData.upName" placeholder="展示用昵称" />
         </el-form-item>
-        <el-form-item label="头像">
+        <el-form-item v-if="!isCloudDrive" label="头像">
           <el-input
             v-model="formData.upAvatar"
             placeholder="头像链接（可选）"
+          />
+        </el-form-item>
+        <el-form-item v-if="isCloudDrive" label="挂载路径" prop="remark">
+          <el-input
+            v-model="formData.remark"
+            placeholder="alist 挂载路径，如 /ali_yun_pan"
           />
         </el-form-item>
         <el-form-item label="状态">
@@ -380,7 +400,7 @@ onMounted(getFollowList);
             <el-radio :label="0">否</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="备注">
+        <el-form-item v-if="!isCloudDrive" label="备注">
           <el-input
             v-model="formData.remark"
             type="textarea"

@@ -12,6 +12,10 @@ import {
   listCloudDriveFilesApi,
   syncCloudDriveApi
 } from "@/api/social/cloud-drive";
+import {
+  getSocialFollowUpListApi,
+  type SocialFollowUpDTO
+} from "@/api/social/follow";
 
 defineOptions({
   name: "CloudDrive"
@@ -19,8 +23,10 @@ defineOptions({
 
 const pageLoading = ref(true);
 const syncing = ref(false);
-const currentPath = ref("/ali_yun_pan");
-const pathStack = ref<string[]>(["ali_yun_pan"]);
+const sources = ref<SocialFollowUpDTO[]>([]);
+const selectedSourceId = ref("");
+const currentPath = ref("");
+const pathStack = ref<string[]>([]);
 const files = ref<AlistFileInfo[]>([]);
 const selectedFiles = ref<AlistFileInfo[]>([]);
 
@@ -91,7 +97,40 @@ function formatSize(bytes: number): string {
   return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
 }
 
+async function loadSources() {
+  try {
+    const { data } = await getSocialFollowUpListApi({
+      platform: "aliyun",
+      status: 1,
+      pageSize: 100
+    });
+    sources.value = data.rows || [];
+    if (sources.value.length > 0 && !selectedSourceId.value) {
+      selectedSourceId.value = sources.value[0].id;
+      const root = sources.value[0].remark || "/";
+      currentPath.value = root;
+      pathStack.value = root.split("/").filter(Boolean);
+      getFiles();
+    } else if (sources.value.length === 0) {
+      pageLoading.value = false;
+    }
+  } catch {
+    message("加载云盘来源失败", { type: "error" });
+    pageLoading.value = false;
+  }
+}
+
+function handleSourceChange(id: string) {
+  const source = sources.value.find(s => s.id === id);
+  if (!source) return;
+  const root = source.remark || "/";
+  currentPath.value = root;
+  pathStack.value = root.split("/").filter(Boolean);
+  getFiles();
+}
+
 async function getFiles() {
+  if (!currentPath.value) return;
   pageLoading.value = true;
   try {
     const { data } = await listCloudDriveFilesApi(currentPath.value);
@@ -121,12 +160,19 @@ function goBack() {
 
 function goUp() {
   const parts = currentPath.value.split("/").filter(Boolean);
-  if (parts.length <= 1) return;
+  if (parts.length <= 0) return;
   parts.pop();
-  const newPath = "/" + parts.join("/");
-  pathStack.value = newPath.split("/").filter(Boolean);
-  if (pathStack.value.length === 0) pathStack.value = ["ali_yun_pan"];
-  currentPath.value = "/" + pathStack.value.join("/");
+  currentPath.value = "/" + parts.join("/");
+  pathStack.value = parts;
+  if (pathStack.value.length === 0) {
+    // back to source root
+    const source = sources.value.find(s => s.id === selectedSourceId.value);
+    if (source) {
+      const root = source.remark || "/";
+      currentPath.value = root;
+      pathStack.value = root.split("/").filter(Boolean);
+    }
+  }
   getFiles();
 }
 
@@ -150,11 +196,27 @@ async function handleSync() {
   }
 }
 
-onMounted(getFiles);
+onMounted(loadSources);
 </script>
 
 <template>
   <div class="main">
+    <div class="source-bar">
+      <span class="source-label">云盘来源：</span>
+      <el-select
+        v-model="selectedSourceId"
+        placeholder="请选择云盘来源"
+        class="!w-[200px]"
+        @change="handleSourceChange"
+      >
+        <el-option
+          v-for="src in sources"
+          :key="src.id"
+          :label="src.upName || src.upId"
+          :value="src.id"
+        />
+      </el-select>
+    </div>
     <div class="path-bar">
       <el-button-group style="margin-right: 12px">
         <el-button
@@ -225,6 +287,22 @@ onMounted(getFiles);
 <style scoped>
 .main {
   padding: 16px;
+}
+
+.source-bar {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
+}
+
+.source-label {
+  margin-right: 8px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .path-bar {
