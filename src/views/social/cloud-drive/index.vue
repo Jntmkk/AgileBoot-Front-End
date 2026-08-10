@@ -19,8 +19,8 @@ defineOptions({
 
 const pageLoading = ref(true);
 const syncing = ref(false);
-const currentPath = ref("/aliyun");
-const pathStack = ref<string[]>(["/aliyun"]);
+const currentPath = ref("/ali_yun_pan");
+const pathStack = ref<string[]>(["ali_yun_pan"]);
 const files = ref<AlistFileInfo[]>([]);
 const selectedFiles = ref<AlistFileInfo[]>([]);
 
@@ -125,7 +125,7 @@ function goUp() {
   parts.pop();
   const newPath = "/" + parts.join("/");
   pathStack.value = newPath.split("/").filter(Boolean);
-  if (pathStack.value.length === 0) pathStack.value = ["aliyun"];
+  if (pathStack.value.length === 0) pathStack.value = ["ali_yun_pan"];
   currentPath.value = "/" + pathStack.value.join("/");
   getFiles();
 }
