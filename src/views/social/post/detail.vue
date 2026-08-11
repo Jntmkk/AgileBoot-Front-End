@@ -98,6 +98,32 @@ function parseImages(images?: string): string[] {
     return [];
   }
 }
+
+interface SentenceSegment {
+  start: number;
+  end: number;
+  text: string;
+}
+
+function parseSentences(raw?: string): SentenceSegment[] {
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+const sentenceTimestamps = computed(() =>
+  parseSentences(detail.value?.audioSentenceTimestamps)
+);
+
+function formatTs(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
 </script>
 
 <template>
@@ -232,7 +258,17 @@ function parseImages(images?: string): string[] {
             <el-empty v-else description="暂无总结" :image-size="60" />
           </el-tab-pane>
           <el-tab-pane label="语音转写" name="transcript">
-            <div v-if="detail.audioTranscript" class="text-block">
+            <div v-if="sentenceTimestamps.length > 0" class="sentences-block">
+              <div
+                v-for="(sent, i) in sentenceTimestamps"
+                :key="i"
+                class="sentence-row"
+              >
+                <span class="sentence-time">{{ formatTs(sent.start) }}</span>
+                <span class="sentence-text">{{ sent.text }}</span>
+              </div>
+            </div>
+            <div v-else-if="detail.audioTranscript" class="text-block">
               {{ detail.audioTranscript }}
             </div>
             <el-empty v-else description="暂无转写" :image-size="60" />
@@ -379,5 +415,51 @@ function parseImages(images?: string): string[] {
   font-size: 12px;
   color: var(--el-color-danger);
   word-break: break-all;
+}
+
+.sentences-block {
+  max-height: 50vh;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--el-text-color-primary);
+}
+
+.sentence-row {
+  display: flex;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    padding-right: 4px;
+    padding-left: 4px;
+    background-color: var(--el-fill-color-light);
+    border-radius: 4px;
+  }
+}
+
+.sentence-time {
+  flex-shrink: 0;
+  width: 48px;
+  padding-top: 1px;
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--el-color-primary);
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.sentence-text {
+  flex: 1;
+  word-break: break-word;
 }
 </style>

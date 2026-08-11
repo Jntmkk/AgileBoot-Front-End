@@ -36,6 +36,7 @@ export type SocialSyncPostDTO = {
   remark: string;
   audioUrl: string;
   audioTranscript: string;
+  audioSentenceTimestamps: string;
   audioSummary: string;
 };
 
