@@ -116,7 +116,8 @@ const formRules = computed(() => {
     platform: [{ required: true, message: "请选择平台" }]
   };
   if (isCloudDrive.value) {
-    base.upId = [{ required: true, message: "请输入账号名称" }];
+    base.upId = [{ required: true, message: "请输入账户ID/手机号" }];
+    base.upName = [{ required: true, message: "请输入账号名称" }];
     base.remark = [{ required: true, message: "请输入挂载路径" }];
     base.upAvatar = [{ required: true, message: "请输入 refresh_token" }];
   } else {
@@ -366,16 +367,25 @@ onMounted(getFollowList);
             <el-option label="阿里云盘" value="aliyun" />
           </el-select>
         </el-form-item>
-        <el-form-item :label="isCloudDrive ? '账号名称' : 'UP ID'" prop="upId">
+        <el-form-item
+          :label="isCloudDrive ? '账户ID/手机号' : 'UP ID'"
+          prop="upId"
+        >
           <el-input
             v-model="formData.upId"
             :placeholder="
-              isCloudDrive ? '阿里云盘账号名称' : 'B站mid/小红书号/抖音号'
+              isCloudDrive ? '阿里云盘账户ID或手机号' : 'B站mid/小红书号/抖音号'
             "
           />
         </el-form-item>
-        <el-form-item v-if="!isCloudDrive" label="UP昵称" prop="upName">
-          <el-input v-model="formData.upName" placeholder="展示用昵称" />
+        <el-form-item
+          :label="isCloudDrive ? '账号名称' : 'UP昵称'"
+          prop="upName"
+        >
+          <el-input
+            v-model="formData.upName"
+            :placeholder="isCloudDrive ? '阿里云盘账号名称' : '展示用昵称'"
+          />
         </el-form-item>
         <el-form-item v-if="!isCloudDrive" label="头像">
           <el-input
