@@ -39,56 +39,6 @@ const fileTypeTag: Record<number, { text: string; type: string }> = {
   6: { text: "其他", type: "" }
 };
 
-const columns: TableColumnList = [
-  { type: "selection", width: 50 },
-  {
-    label: "文件名",
-    prop: "name",
-    minWidth: 280,
-    cellRenderer: ({ row }) => (
-      <div
-        style="display:flex;align-items:center;gap:8px;cursor:pointer"
-        onClick={() => handleFileClick(row)}
-      >
-        {row.thumb ? <el-avatar size="small" src={row.thumb} /> : null}
-        <span
-          style={
-            row.isDir ? "color:var(--el-color-primary);font-weight:500" : ""
-          }
-        >
-          {row.name}
-        </span>
-      </div>
-    )
-  },
-  {
-    label: "类型",
-    prop: "type",
-    width: 90,
-    cellRenderer: ({ row, props }) => {
-      const t = row.isDir
-        ? { text: "目录", type: "primary" }
-        : fileTypeTag[row.type] || { text: "文件", type: "" };
-      return (
-        <el-tag size={props.size} type={t.type as any} effect="plain">
-          {t.text}
-        </el-tag>
-      );
-    }
-  },
-  {
-    label: "大小",
-    prop: "size",
-    width: 120,
-    formatter: ({ size }) => (size ? formatSize(size) : "-")
-  },
-  {
-    label: "修改时间",
-    prop: "modified",
-    minWidth: 160
-  }
-];
-
 function formatSize(bytes: number): string {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -273,11 +223,53 @@ onMounted(loadSources);
           highlight-current-row
           @selection-change="handleSelectionChange"
         >
-          <el-table-column
-            v-for="col in columns"
-            :key="col.label"
-            v-bind="col"
-          />
+          <el-table-column type="selection" width="50" />
+          <el-table-column label="文件名" prop="name" min-width="280">
+            <template #default="{ row }">
+              <div
+                style="
+                  display: flex;
+                  gap: 8px;
+                  align-items: center;
+                  cursor: pointer;
+                "
+                @click="handleFileClick(row)"
+              >
+                <el-avatar v-if="row.thumb" size="small" :src="row.thumb" />
+                <span
+                  :style="
+                    row.isDir
+                      ? 'color:var(--el-color-primary);font-weight:500'
+                      : ''
+                  "
+                >
+                  {{ row.name }}
+                </span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="类型" prop="type" width="90">
+            <template #default="{ row }">
+              <el-tag
+                :size="size"
+                :type="(row.isDir ? 'primary' : (fileTypeTag[row.type] && fileTypeTag[row.type].type) || '') as any"
+                effect="plain"
+              >
+                {{
+                  row.isDir
+                    ? "目录"
+                    : (fileTypeTag[row.type] && fileTypeTag[row.type].text) ||
+                      "文件"
+                }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="大小" prop="size" width="120">
+            <template #default="{ row }">
+              {{ row.size ? formatSize(row.size) : "-" }}
+            </template>
+          </el-table-column>
+          <el-table-column label="修改时间" prop="modified" min-width="160" />
         </el-table>
       </template>
     </PureTableBar>
