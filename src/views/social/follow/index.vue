@@ -396,7 +396,7 @@ onMounted(getFollowList);
           />
           <span class="token-help">
             <a
-              href="https://alist.nn.ci/zh/guide/drivers/aliyundrive.html"
+              href="https://alistgo.com/zh/tool/aliyundrive/request?cachebust=20260809"
               target="_blank"
               rel="noopener"
             >
