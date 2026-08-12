@@ -31,12 +31,12 @@ const files = ref<AlistFileInfo[]>([]);
 const selectedFiles = ref<AlistFileInfo[]>([]);
 
 const fileTypeTag: Record<number, { text: string; type: string }> = {
+  0: { text: "其他", type: "" },
   1: { text: "目录", type: "primary" },
-  2: { text: "图片", type: "success" },
-  3: { text: "视频", type: "warning" },
+  2: { text: "视频", type: "warning" },
+  3: { text: "音频", type: "danger" },
   4: { text: "文档", type: "info" },
-  5: { text: "音频", type: "danger" },
-  6: { text: "其他", type: "" }
+  5: { text: "图片", type: "success" }
 };
 
 function formatSize(bytes: number): string {
