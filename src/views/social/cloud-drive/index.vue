@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import FolderOpened from "@iconify-icons/ep/folder-opened";
@@ -10,7 +10,8 @@ import { message } from "@/utils/message";
 import {
   AlistFileInfo,
   listCloudDriveFilesApi,
-  syncCloudDriveApi
+  syncCloudDriveApi,
+  syncSelectedCloudDriveApi
 } from "@/api/social/cloud-drive";
 import {
   getSocialFollowUpListApi,
@@ -23,6 +24,7 @@ defineOptions({
 
 const pageLoading = ref(true);
 const syncing = ref(false);
+const syncingSelected = ref(false);
 const sources = ref<SocialFollowUpDTO[]>([]);
 const selectedSourceId = ref("");
 const currentPath = ref("");
@@ -38,6 +40,29 @@ const fileTypeTag: Record<number, { text: string; type: string }> = {
   4: { text: "文档", type: "info" },
   5: { text: "图片", type: "success" }
 };
+
+const VIDEO_EXTS = new Set([
+  "mp4",
+  "mov",
+  "avi",
+  "mkv",
+  "flv",
+  "wmv",
+  "webm",
+  "m4v",
+  "ts",
+  "rmvb"
+]);
+
+function isVideoFile(name: string): boolean {
+  const idx = name.lastIndexOf(".");
+  if (idx < 0) return false;
+  return VIDEO_EXTS.has(name.substring(idx + 1).toLowerCase());
+}
+
+const hasSelectedVideo = computed(() =>
+  selectedFiles.value.some(f => isVideoFile(f.name))
+);
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return bytes + " B";
@@ -146,6 +171,25 @@ async function handleSync() {
   }
 }
 
+async function handleSyncSelected() {
+  const paths = selectedFiles.value
+    .filter(f => isVideoFile(f.name))
+    .map(f => f.path);
+  if (paths.length === 0) {
+    message("请先勾选视频文件", { type: "warning" });
+    return;
+  }
+  syncingSelected.value = true;
+  try {
+    const { data: count } = await syncSelectedCloudDriveApi(paths);
+    message(`勾选同步完成，新增 ${count || 0} 个视频`, { type: "success" });
+  } catch (e) {
+    message("勾选同步失败", { type: "error" });
+  } finally {
+    syncingSelected.value = false;
+  }
+}
+
 onMounted(loadSources);
 </script>
 
@@ -207,6 +251,15 @@ onMounted(loadSources);
           @click="handleSync"
         >
           同步此目录视频
+        </el-button>
+        <el-button
+          type="primary"
+          :icon="useRenderIcon(VideoCamera)"
+          :loading="syncingSelected"
+          :disabled="!hasSelectedVideo"
+          @click="handleSyncSelected"
+        >
+          同步勾选视频
         </el-button>
       </div>
     </div>

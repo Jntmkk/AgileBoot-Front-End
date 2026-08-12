@@ -48,3 +48,20 @@ export const syncCloudDriveApi = (path: string, syncToken?: string) => {
     }
   );
 };
+
+/** 同步勾选的视频文件 */
+export const syncSelectedCloudDriveApi = (
+  paths: string[],
+  syncToken?: string
+) => {
+  const headers: Record<string, string> = {};
+  if (syncToken) {
+    headers["X-Sync-Token"] = syncToken;
+  }
+  return http.request<ResponseData<number>>(
+    "post",
+    "/social/cloud-drive/sync-selected",
+    { data: paths },
+    { headers }
+  );
+};
