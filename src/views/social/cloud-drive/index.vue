@@ -277,7 +277,7 @@ onMounted(loadSources);
           @selection-change="handleSelectionChange"
         >
           <el-table-column type="selection" width="50" />
-          <el-table-column label="文件名" prop="name" min-width="280">
+          <el-table-column label="文件名" prop="name" min-width="280" sortable>
             <template #default="{ row }">
               <div
                 style="
@@ -301,7 +301,7 @@ onMounted(loadSources);
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="类型" prop="type" width="90">
+          <el-table-column label="类型" prop="type" width="90" sortable>
             <template #default="{ row }">
               <el-tag
                 :size="size"
@@ -317,12 +317,17 @@ onMounted(loadSources);
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="大小" prop="size" width="120">
+          <el-table-column label="大小" prop="size" width="120" sortable>
             <template #default="{ row }">
               {{ row.size ? formatSize(row.size) : "-" }}
             </template>
           </el-table-column>
-          <el-table-column label="修改时间" prop="modified" min-width="160" />
+          <el-table-column
+            label="修改时间"
+            prop="modified"
+            min-width="160"
+            sortable
+          />
         </el-table>
       </template>
     </PureTableBar>
