@@ -18,6 +18,7 @@ const visible = ref(false);
 const loading = ref(false);
 const detail = ref<SocialSyncPostDTO | null>(null);
 const activeTab = ref("summary");
+const videoStartTime = ref(0);
 
 // Drawer 宽度拖拽
 const drawerSize = ref(640);
@@ -58,6 +59,12 @@ const bvid = computed(() => {
   return match ? match[0] : null;
 });
 
+const playerSrc = computed(() => {
+  if (!bvid.value) return null;
+  const t = Math.floor(videoStartTime.value);
+  return `https://player.bilibili.com/player.html?bvid=${bvid.value}&page=1&high_quality=1&danmaku=0&autoplay=1&t=${t}`;
+});
+
 const renderedSummary = computed(() =>
   detail.value?.audioSummary ? md.render(detail.value.audioSummary) : ""
 );
@@ -69,6 +76,7 @@ watch(
     if (v && props.postId) {
       loading.value = true;
       detail.value = null;
+      videoStartTime.value = 0;
       activeTab.value = "summary";
       try {
         const { data } = await getSocialPostInfoApi(props.postId);
@@ -217,7 +225,9 @@ function formatTs(seconds: number): string {
         >
           <div v-if="bvid" class="video-player">
             <iframe
-              :src="`https://player.bilibili.com/player.html?bvid=${bvid}&page=1&high_quality=1&danmaku=0&autoplay=0`"
+              v-if="playerSrc"
+              :key="playerSrc"
+              :src="playerSrc"
               width="100%"
               height="100%"
               frameborder="0"
@@ -264,7 +274,12 @@ function formatTs(seconds: number): string {
                 :key="i"
                 class="sentence-row"
               >
-                <span class="sentence-time">{{ formatTs(sent.start) }}</span>
+                <span
+                  class="sentence-time"
+                  @click="videoStartTime = sent.start"
+                >
+                  {{ formatTs(sent.start) }}
+                </span>
                 <span class="sentence-text">{{ sent.text }}</span>
               </div>
             </div>
